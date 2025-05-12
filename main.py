@@ -13,16 +13,23 @@ def executar_processo(id_processo, drift_inicial, conexao):
     Ele aguarda solicitações de tempo (REQUISITAR_TEMPO) e response (ENVIAR_TEMPO), depois aplica ajuste (AJUSTAR_RELOGIO).
     """
     drift = drift_inicial
+    ticks = 0
     while True:
+        time.sleep(random.uniform(0.8, 1.2))
+        ticks += 1
+
         msg = receber_objeto(conexao) # espera msg coord
         if not msg:
             break
         if msg['type'] == REQUISITAR_TEMPO: # se coord pedir tempo, responde com timestamp
-            tempo_local = time.time() + drift
+            tempo_local = ticks + drift
             enviar_objeto(conexao, {'type': ENVIAR_TEMPO, 'id': id_processo, 'time': tempo_local})
         elif msg['type'] == AJUSTAR_RELOGIO: # se coord enviar ajuste, atualizar o drift do relogio
-            drift += msg['offset']
-            print(f"Processo {id_processo}: Relógio ajustado em {msg['offset']:.4f} segundos. Novo drift = {drift:.4f}.")
+            tempo_antes = ticks + drift # tempo antes do ajuste para log
+            offset = msg['offset'] # ajuste
+            drift += offset
+            tempo_depois = ticks + drift # tempo depois do ajuste
+            print(f"Processo {id_processo}: Tempo antes = {tempo_antes:.4f} segundos, após ajuste = {tempo_depois:.4f} segundos. Offset aplicado = {offset:.4f} segundos.")
             break
     conexao.close()
 
@@ -36,12 +43,18 @@ def executar_coordenador():
     servidor.bind((HOST_COORDENADOR, PORTA_COORDENADOR))
     servidor.listen(NUMERO_DE_PROCESSOS)
 
+    drift_coord = 0 # sem desvio inicial
+    ticks_coord = 0 # contador de ticks
+
     conexoes = [] # para guardar sockets dos clientes conectados
     print(f"Coordenador: Aguardando {NUMERO_DE_PROCESSOS} processos...")
     for _ in range(NUMERO_DE_PROCESSOS):
         conexao, endereco = servidor.accept()
         conexoes.append(conexao)
         print(f"Coordenador: Processo conectado de {endereco}.")
+
+    time.sleep(1)
+    ticks_coord += 1
 
     # solicita tempo dos clientes
     for conn in conexoes:
@@ -51,14 +64,15 @@ def executar_coordenador():
     for conn in conexoes:
         msg = receber_objeto(conn)
         if msg and msg['type'] == ENVIAR_TEMPO:
-            print(f"Coordenador: Recebeu tempo {msg['time']:.4f} do processo {msg['id']}.")
+            print(f"Coordenador: Recebeu tempo {msg['time']:.4f} segundos do processo {msg['id']}.")
             tempos.append((conn, msg['time']))
 
     # calcula média dos relogios
-    tempo_coordenador = time.time()
+    tempo_coordenador = ticks_coord + drift_coord
     all_times = [t for (_, t) in tempos] + [tempo_coordenador] # timestamp de todos os clientes + timestamp do coord
     media = sum(all_times) / len(all_times)
-    print(f"Coordenador: Tempo médio = {media:.4f}.")
+    print(f"Coordenador: Tempo próprio = {tempo_coordenador:.4f} segundos.")
+    print(f"Coordenador: Tempo médio = {media:.4f} segundos")
 
     # envia ajustes
     for conn, t in tempos:
@@ -66,7 +80,9 @@ def executar_coordenador():
         enviar_objeto(conn, {'type': AJUSTAR_RELOGIO, 'offset': offset})
 
     ajuste_coord = media - tempo_coordenador # ajustando o do coord
-    print(f"Coordenador: Ajustando próprio relógio em {ajuste_coord:.4f} segundos.")
+    tempo_antes = tempo_coordenador
+    tempo_depois = tempo_coordenador + ajuste_coord
+    print(f"Coordenador: Tempo antes = {tempo_antes:.4f} segundos, após ajuste = {tempo_depois:.4f} segundos. Offset aplicado = {ajuste_coord:.4f} segundos.")
 
     # fechando conexoes
     for conn, _ in tempos:
@@ -86,7 +102,7 @@ if __name__ == '__main__':
         print(f"Processo {id_processo}: drift inicial = {d:.4f} segundos.")
         conexao = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conexao.connect((HOST_COORDENADOR, PORTA_COORDENADOR))
-        threading.Thread(target=executar_processo, args=(id_processo, d, conexao), daemon=True).start()
+        threading.Thread(target=executar_processo, args=(id_processo, d, conexao), daemon=False).start()
 
     # aguarda coord finalizar
     thread_coord.join()
