@@ -11,24 +11,27 @@ def executar_processo(id_processo, drift_inicial, conexao):
     """
     Cada processo simula um relógio local com um drift (atrasado ou adiantado).
     Ele aguarda solicitações de tempo (REQUISITAR_TEMPO) e response (ENVIAR_TEMPO), depois aplica ajuste (AJUSTAR_RELOGIO).
+    Usa contador de segundos e sleep para avançar o tempo
     """
     drift = drift_inicial
-    ticks = 0
+    segundos = 0
+
     while True:
-        time.sleep(random.uniform(0.8, 1.2))
-        ticks += 1
+        time.sleep(1)
+        segundos += 1
 
         msg = receber_objeto(conexao) # espera msg coord
         if not msg:
             break
         if msg['type'] == REQUISITAR_TEMPO: # se coord pedir tempo, responde com timestamp
-            tempo_local = ticks + drift
+            tempo_local = segundos + drift
+            print(f"Processo {id_processo}: Tempo atual (antes do ajuste) = {tempo_local:.4f} segundos.")
             enviar_objeto(conexao, {'type': ENVIAR_TEMPO, 'id': id_processo, 'time': tempo_local})
         elif msg['type'] == AJUSTAR_RELOGIO: # se coord enviar ajuste, atualizar o drift do relogio
-            tempo_antes = ticks + drift # tempo antes do ajuste para log
+            tempo_antes = segundos + drift # tempo antes do ajuste para log
             offset = msg['offset'] # ajuste
             drift += offset
-            tempo_depois = ticks + drift # tempo depois do ajuste
+            tempo_depois = segundos + drift # tempo depois do ajuste
             print(f"Processo {id_processo}: Tempo antes = {tempo_antes:.4f} segundos, após ajuste = {tempo_depois:.4f} segundos. Offset aplicado = {offset:.4f} segundos.")
             break
     conexao.close()
@@ -44,7 +47,7 @@ def executar_coordenador():
     servidor.listen(NUMERO_DE_PROCESSOS)
 
     drift_coord = 0 # sem desvio inicial
-    ticks_coord = 0 # contador de ticks
+    segundos_coord = 0 # contador de segundos
 
     conexoes = [] # para guardar sockets dos clientes conectados
     print(f"Coordenador: Aguardando {NUMERO_DE_PROCESSOS} processos...")
@@ -54,7 +57,7 @@ def executar_coordenador():
         print(f"Coordenador: Processo conectado de {endereco}.")
 
     time.sleep(1)
-    ticks_coord += 1
+    segundos_coord += 1
 
     # solicita tempo dos clientes
     for conn in conexoes:
@@ -68,11 +71,11 @@ def executar_coordenador():
             tempos.append((conn, msg['time']))
 
     # calcula média dos relogios
-    tempo_coordenador = ticks_coord + drift_coord
+    tempo_coordenador = segundos_coord + drift_coord
     all_times = [t for (_, t) in tempos] + [tempo_coordenador] # timestamp de todos os clientes + timestamp do coord
     media = sum(all_times) / len(all_times)
     print(f"Coordenador: Tempo próprio = {tempo_coordenador:.4f} segundos.")
-    print(f"Coordenador: Tempo médio = {media:.4f} segundos")
+    print(f"Coordenador: Tempo médio = {media:.4f} segundos.")
 
     # envia ajustes
     for conn, t in tempos:

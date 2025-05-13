@@ -1,8 +1,8 @@
 # config
-NUMERO_DE_PROCESSOS = 3
+NUMERO_DE_PROCESSOS = 4
 HOST_COORDENADOR = 'localhost'
 PORTA_COORDENADOR = 10000
-INTERVALO_DRIFT = 5.0  # desvio máximo em segundos
+INTERVALO_DRIFT = 10.0  # desvio máximo em segundos
 
 # tipos de mensagem
 REQUISITAR_TEMPO = 'REQUISITAR_TEMPO' # coord pede timestamp para cliente
