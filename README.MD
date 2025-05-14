@@ -10,8 +10,8 @@ Este projeto implementa o algoritmo de sincronização de relógios de Berkeley,
 | Nome | Matrícula |
 |---------------|---------------|
 | **Caio Teixeira da Silva** | 22112243 |
-| **Noemy Torres Pereira** | 22112110 |
 | **Gustavo Henrique dos Santos Malaquias** | 22111978 |
+| **Noemy Torres Pereira** | 22112110 |
 
 ---
 
@@ -122,3 +122,6 @@ A implementação utiliza threads para simular múltiplos processos executando c
 - O coordenador executa em uma thread separada
 - Cada processo cliente executa em sua própria thread
 - A sincronização entre threads é gerenciada através de mensagens via sockets
+
+## Licença
+Este projeto está licenciado sob a licença MIT. Para mais detalhes, consulte o arquivo [LICENSE](https://github.com/hsm-gustavo/berkeley-sockets/blob/main/LICENSE) no repositório.
