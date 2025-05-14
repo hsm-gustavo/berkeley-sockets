@@ -5,11 +5,15 @@ Este projeto implementa o algoritmo de sincronização de relógios de Berkeley,
 
 ## Equipe
 
-| Nome |
-|------|
-| Caio Teixeira da Silva |
-| Noemy Torres Pereira |
-| Gustavo Henrique dos Santos Malaquias |
+## Equipe
+
+| Nome | Matrícula |
+|:---------------:|:---------------:|
+| **Caio Teixeira da Silva** | 22112243 |
+| **Noemy Torres Pereira** | 22112110 |
+| **Gustavo Henrique dos Santos Malaquias** | 22111978 |
+
+---
 
 ## Informações Acadêmicas
 
